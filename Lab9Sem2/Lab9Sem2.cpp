@@ -1,438 +1,199 @@
 ﻿#include <iostream>
 #include <fstream>
-#include <string>
-#include <ctime>
-#include <cstdlib>
+#include <cstring>
 
-using namespace std;
+const int MAX_TRAINS = 100;
 
 struct Train {
-    string date;
-    string destination;
-    string departureTime;
+    char date[20];
+    char destination[50];
+    char departureTime[10];
     int availableSeats;
 };
 
 // Функция для создания нового файла данных
 void createFile() {
-    ofstream file("trains.dat", ios::binary);
-    if (!file) {
-        cout << "Ошибка при создании файла." << endl;
-        return;
-    }
-
-    Train trains[5];
-
-    trains[0] = { "2023-06-01", "Город 1", "09:00", 50 };
-    trains[1] = { "2023-06-01", "Город 2", "12:30", 30 };
-    trains[2] = { "2023-06-02", "Город 1", "10:15", 20 };
-    trains[3] = { "2023-06-02", "Город 3", "14:45", 40 };
-    trains[4] = { "2023-06-03", "Город 2", "11:30", 35 };
-
-    file.write(reinterpret_cast<char*>(trains), sizeof(trains));
-
-    file.close();
-
-    cout << "Файл создан успешно." << endl;
-}
-
-void viewFile() {
-    ifstream file("trains.dat", ios::binary);
-    if (!file) {
-        cout << "Ошибка при открытии файла." << endl;
-        return;
-    }
-
-    file.seekg(0, ios::end);
-    streampos fileSize = file.tellg();
-    int numRecords = fileSize / sizeof(Train);
-
-    Train* trains = new Train[numRecords];
-
-    file.seekg(0, ios::beg);
-    file.read(reinterpret_cast<char*>(trains), fileSize);
-
-    for (int i = 0; i < numRecords; i++) {
-        cout << "Дата: " << trains[i].date << endl;
-        cout << "Пункт назначения: " << trains[i].destination << endl;
-        cout << "Время отправления: " << trains[i].departureTime << endl;
-        cout << "Свободные места: " << trains[i].availableSeats << endl;
-        cout << "---------------------" << endl;
-    }
-
-    //delete[] trains;
-
+    std::ofstream file("trains.txt");
     file.close();
 }
 
+// Функция для добавления новой записи в файл данных
+void addTrain(const Train& train) {
+    std::ofstream file("trains.txt", std::ios::app);
+    file.write(reinterpret_cast<const char*>(&train), sizeof(Train));
+    file.close();
+}
 
-
-// Функция для добавления записи в файл данных
-void addRecord() {
-    ofstream file("trains.dat", ios::binary | ios::app);
-    if (!file) {
-        cout << "Ошибка при открытии файла." << endl;
-        return;
-    }
-
+// Функция для просмотра содержимого файла данных
+void viewTrains() {
+    std::ifstream file("trains.txt");
     Train train;
-
-    cout << "Введите дату: ";
-    cin >> train.date;
-
-    cout << "Введите пункт назначения: ";
-    cin >> train.destination;
-
-    cout << "Введите время отправления: ";
-    cin >> train.departureTime;
-
-    cout << "Введите количество свободных мест: ";
-    cin >> train.availableSeats;
-
-    file.write(reinterpret_cast<char*>(&train), sizeof(train));
-
+    while (file.read(reinterpret_cast<char*>(&train), sizeof(Train))) {
+        std::cout << "Date: " << train.date << std::endl;
+        std::cout << "Destination: " << train.destination << std::endl;
+        std::cout << "Departure Time: " << train.departureTime << std::endl;
+        std::cout << "Available Seats: " << train.availableSeats << std::endl;
+        std::cout << "--------------------------" << std::endl;
+    }
     file.close();
-
-    cout << "Запись добавлена успешно." << endl;
 }
 
-// Функция для линейного поиска в файле данных
-void linearSearch() {
-    ifstream file("trains.dat", ios::binary);
-    if (!file) {
-        cout << "Ошибка при открытии файла." << endl;
-        return;
-    }
-
-    int key;
-    cout << "Введите количество свободных мест для поиска: ";
-    cin >> key;
-
+// Функция для выполнения линейного поиска в файле данных
+void linearSearch(const char* destination) {
+    std::ifstream file("trains.txt");
     Train train;
-
     bool found = false;
-
-    while (file.read(reinterpret_cast<char*>(&train), sizeof(train))) {
-        if (train.availableSeats == key) {
-            cout << "Найден поезд:" << endl;
-            cout << "Дата: " << train.date << endl;
-            cout << "Пункт назначения: " << train.destination << endl;
-            cout << "Время отправления: " << train.departureTime << endl;
-            cout << "Свободные места: " << train.availableSeats << endl;
-            cout << "---------------------" << endl;
-
+    while (file.read(reinterpret_cast<char*>(&train), sizeof(Train))) {
+        if (strcmp(train.destination, destination) == 0) {
+            std::cout << "Train found!" << std::endl;
+            std::cout << "Date: " << train.date << std::endl;
+            std::cout << "Destination: " << train.destination << std::endl;
+            std::cout << "Departure Time: " << train.departureTime << std::endl;
+            std::cout << "Available Seats: " << train.availableSeats << std::endl;
+            std::cout << "--------------------------" << std::endl;
             found = true;
         }
     }
-
     if (!found) {
-        cout << "Поезд с указанным количеством свободных мест не найден." << endl;
+        std::cout << "Train not found!" << std::endl;
     }
-
     file.close();
 }
 
-// Функция для сортировки массива (файла) методом прямого выбора
+// Функция для сортировки массива методом прямого выбора
 void selectionSort() {
-    ifstream file("trains.dat", ios::binary | ios::ate);
-    if (!file) {
-        cout << "Ошибка при открытии файла." << endl;
-        return;
+    std::ifstream file("trains.txt");
+    Train trains[MAX_TRAINS];
+    int numTrains = 0;
+
+    while (file.read(reinterpret_cast<char*>(&trains[numTrains]), sizeof(Train))) {
+        numTrains++;
     }
+    file.close();
 
-    streampos fileSize = file.tellg();
-    int numRecords = fileSize / sizeof(Train);
-
-    Train* trains = new Train[numRecords];
-
-    file.seekg(0, ios::beg);
-    file.read(reinterpret_cast<char*>(trains), fileSize);
-
-    for (int i = 0; i < numRecords - 1; i++) {
+    for (int i = 0; i < numTrains - 1; i++) {
         int minIndex = i;
-
-        for (int j = i + 1; j < numRecords; j++) {
+        for (int j = i + 1; j < numTrains; j++) {
             if (trains[j].availableSeats < trains[minIndex].availableSeats) {
                 minIndex = j;
             }
         }
-
         if (minIndex != i) {
-            Train temp = trains[i];
-            trains[i] = trains[minIndex];
-            trains[minIndex] = temp;
+            std::swap(trains[i], trains[minIndex]);
         }
     }
 
-    file.close();
-
-    ofstream outFile("sorted_trains.dat", ios::binary);
-    outFile.write(reinterpret_cast<char*>(trains), fileSize);
-    outFile.close();
-
-   // delete[] trains;
-
-    cout << "Файл успешно отсортирован методом прямого выбора." << endl;
+    std::ofstream outputFile("sorted_trains.txt");
+    for (int i = 0; i < numTrains; i++) {
+        outputFile.write(reinterpret_cast<const char*>(&trains[i]), sizeof(Train));
+    }
+    outputFile.close();
+    std::cout << "Array sorted and saved to 'sorted_trains.txt'" << std::endl;
 }
 
-// Функция для сортировки массива (файла) методом QuickSort
-void quickSort(Train* trains, int left, int right) {
-    int i = left;
-    int j = right;
-    int pivot = trains[(left + right) / 2].availableSeats;
-
-    while (i <= j) {
-        while (trains[i].availableSeats < pivot) {
+// Функция для разделения массива при выполнении QuickSort
+int partition(Train trains[], int low, int high) {
+    Train pivot = trains[high];
+    int i = low - 1;
+    for (int j = low; j <= high - 1; j++) {
+        if (trains[j].availableSeats < pivot.availableSeats) {
             i++;
-        }
-
-        while (trains[j].availableSeats > pivot) {
-            j--;
-        }
-
-        if (i <= j) {
-            Train temp = trains[i];
-            trains[i] = trains[j];
-            trains[j] = temp;
-
-            i++;
-            j--;
+            std::swap(trains[i], trains[j]);
         }
     }
+    std::swap(trains[i + 1], trains[high]);
+    return i + 1;
+}
 
-    if (left < j) {
-        quickSort(trains, left, j);
-    }
-
-    if (i < right) {
-        quickSort(trains, i, right);
+// Функция для выполнения QuickSort
+void quickSort(Train trains[], int low, int high) {
+    if (low < high) {
+        int pivot = partition(trains, low, high);
+        quickSort(trains, low, pivot - 1);
+        quickSort(trains, pivot + 1, high);
     }
 }
 
+// Функция для сортировки массива методом QuickSort
 void quickSortWrapper() {
-    ifstream file("trains.dat", ios::binary | ios::ate);
-    if (!file) {
-        cout << "Ошибка при открытии файла." << endl;
-        return;
+    std::ifstream file("trains.txt");
+    Train trains[MAX_TRAINS];
+    int numTrains = 0;
+
+    while (file.read(reinterpret_cast<char*>(&trains[numTrains]), sizeof(Train))) {
+        numTrains++;
     }
-
-    streampos fileSize = file.tellg();
-    int numRecords = fileSize / sizeof(Train);
-
-    Train* trains = new Train[numRecords];
-
-    file.seekg(0, ios::beg);
-    file.read(reinterpret_cast<char*>(trains), fileSize);
-
-    quickSort(trains, 0, numRecords - 1);
-
     file.close();
 
-    ofstream outFile("sorted_trains.dat", ios::binary);
-    outFile.write(reinterpret_cast<char*>(trains), fileSize);
-    outFile.close();
+    quickSort(trains, 0, numTrains - 1);
 
-    delete[] trains;
-
-    cout << "Файл успешно отсортирован методом QuickSort." << endl;
+    std::ofstream outputFile("sorted_trains.txt");
+    for (int i = 0; i < numTrains; i++) {
+        outputFile.write(reinterpret_cast<const char*>(&trains[i]), sizeof(Train));
+    }
+    outputFile.close();
+    std::cout << "Array sorted and saved to 'sorted_trains.txt'" << std::endl;
 }
 
-// Функция для двоичного поиска в отсортированном массиве
-void binarySearch() {
-    ifstream file("sorted_trains.dat", ios::binary);
-    if (!file) {
-        cout << "Ошибка при открытии файла." << endl;
-        return;
-    }
-
-    int key;
-    cout << "Введите количество свободных мест для поиска: ";
-    cin >> key;
-
+// Функция для выполнения двоичного поиска в отсортированном массиве
+void binarySearch(const char* destination, int requiredSeats) {
+    std::ifstream file("sorted_trains.txt");
     Train train;
-
-    int left = 0;
-    file.seekg(0, ios::end);
-    int fileSize = file.tellg();
-    int right = fileSize / sizeof(Train) - 1;
-    int foundIndex = -1;
-
-    while (left <= right) {
-        int mid = (left + right) / 2;
-        file.seekg(mid * sizeof(Train), ios::beg);
-        file.read(reinterpret_cast<char*>(&train), sizeof(train));
-
-        if (train.availableSeats == key) {
-            foundIndex = mid;
-            break;
-        }
-        else if (train.availableSeats < key) {
-            left = mid + 1;
-        }
-        else {
-            right = mid - 1;
-        }
-    }
-
-    if (foundIndex != -1) {
-        file.seekg(foundIndex * sizeof(Train), ios::beg);
-        file.read(reinterpret_cast<char*>(&train), sizeof(train));
-
-        cout << "Найден поезд:" << endl;
-        cout << "Дата: " << train.date << endl;
-        cout << "Пункт назначения: " << train.destination << endl;
-        cout << "Время отправления: " << train.departureTime << endl;
-        cout << "Свободные места: " << train.availableSeats << endl;
-    }
-    else {
-        cout << "Поезд с указанным количеством свободных мест не найден." << endl;
-    }
-
-    file.close();
-}
-
-// Функция для бронирования мест в поездах
-void bookSeats() {
-    ifstream file("trains.dat", ios::binary | ios::ate);
-    if (!file) {
-        cout << "Ошибка при открытии файла." << endl;
-        return;
-    }
-
-    streampos fileSize = file.tellg();
-    int numRecords = fileSize / sizeof(Train);
-
-    Train* trains = new Train[numRecords];
-
-    file.seekg(0, ios::beg);
-    file.read(reinterpret_cast<char*>(trains), fileSize);
-
-    string destination;
-    cout << "Введите пункт назначения: ";
-    cin >> destination;
-
-    string date;
-    cout << "Введите дату: ";
-    cin >> date;
-
-    int dayOfWeek;
-    cout << "Введите номер дня недели (1-7): ";
-    cin >> dayOfWeek;
-
-    int maxHours;
-    cout << "Введите максимальное время отправления (в часах): ";
-    cin >> maxHours;
-
     bool found = false;
-
-    for (int i = 0; i < numRecords; i++) {
-        if (trains[i].destination == destination &&
-            trains[i].date == date &&
-            trains[i].departureTime <= to_string(maxHours) + ":00" &&
-            dayOfWeek == 3) {
-            cout << "Время отправления: " << trains[i].departureTime << endl;
+    while (file.read(reinterpret_cast<char*>(&train), sizeof(Train))) {
+        if (strcmp(train.destination, destination) == 0 && train.availableSeats >= requiredSeats) {
+            std::cout << "Train found!" << std::endl;
+            std::cout << "Date: " << train.date << std::endl;
+            std::cout << "Destination: " << train.destination << std::endl;
+            std::cout << "Departure Time: " << train.departureTime << std::endl;
+            std::cout << "Available Seats: " << train.availableSeats << std::endl;
+            std::cout << "--------------------------" << std::endl;
             found = true;
             break;
         }
     }
-
     if (!found) {
-        cout << "Невозможно выполнить заказ." << endl;
+        std::cout << "Train not found or required seats not available!" << std::endl;
     }
-
     file.close();
 }
 
 int main() {
-    setlocale(LC_ALL, "ru");
-    srand(static_cast<unsigned int>(time(nullptr)));
+    createFile();
 
-    int choice;
+    Train train1;
+    strcpy_s(train1.date, "2023-06-06");
+    strcpy_s(train1.destination, "City A");
+    strcpy_s(train1.departureTime, "10:00");
+    train1.availableSeats = 50;
 
-    cout << "Выберите способ заполнения файла данных:" << endl;
-    cout << "1. Ручной ввод" << endl;
-    cout << "2. Случайное заполнение" << endl;
-    cout << "Ваш выбор: ";
-    cin >> choice;
+    Train train2;
+    strcpy_s(train2.date, "2023-06-07");
+    strcpy_s(train2.destination, "City B");
+    strcpy_s(train2.departureTime, "12:30");
+    train2.availableSeats = 30;
 
-    if (choice == 1) {
-        createFile();
-    }
-    else if (choice == 2) {
-        ofstream file("trains.dat", ios::binary);
-        if (!file) {
-            cout << "Ошибка при создании файла." << endl;
-            return 0;
-        }
+    Train train3;
+    strcpy_s(train3.date, "2023-06-08");
+    strcpy_s(train3.destination, "City A");
+    strcpy_s(train3.departureTime, "09:00");
+    train3.availableSeats = 20;
 
-        int numRecords;
-        cout << "Введите количество записей: ";
-        cin >> numRecords;
+    addTrain(train1);
+    addTrain(train2);
+    addTrain(train3);
 
-        Train* trains = new Train[numRecords];
+    std::cout << "Viewing all trains:" << std::endl;
+    viewTrains();
 
-        for (int i = 0; i < numRecords; i++) {
-            trains[i].date = "2023-06-" + to_string(rand() % 7 + 1);
-            trains[i].destination = "Город " + to_string(rand() % 5 + 1);
-            trains[i].departureTime = to_string(rand() % 24) + ":" + to_string(rand() % 60);
-            trains[i].availableSeats = rand() % 100 + 1;
-        }
+    std::cout << "Performing linear search for destination 'City B':" << std::endl;
+    linearSearch("City B");
 
-        file.write(reinterpret_cast<char*>(trains), numRecords * sizeof(Train));
+    std::cout << "Performing selection sort:" << std::endl;
+    selectionSort();
 
-        file.close();
-
-        delete[] trains;
-
-        cout << "Файл создан успешно." << endl;
-    }
-    else {
-        cout << "Некорректный выбор." << endl;
-        return 0;
-    }
-
-    while (true) {
-        cout << "---------------------" << endl;
-        cout << "Меню:" << endl;
-        cout << "1. Просмотреть файл данных" << endl;
-        cout << "2. Добавить запись" << endl;
-        cout << "3. Выполнить линейный поиск" << endl;
-        cout << "4. Отсортировать файл методом прямого выбора" << endl;
-        cout << "5. Отсортировать файл методом QuickSort" << endl;
-        cout << "6. Выполнить двоичный поиск" << endl;
-        cout << "7. Забронировать места в поездах" << endl;
-        cout << "8. Выход" << endl;
-        cout << "Ваш выбор: ";
-        cin >> choice;
-
-        switch (choice) {
-        case 1:
-            viewFile();
-            break;
-        case 2:
-            addRecord();
-            break;
-        case 3:
-            linearSearch();
-            break;
-        case 4:
-            selectionSort();
-            break;
-        case 5:
-            quickSortWrapper();
-            break;
-        case 6:
-            binarySearch();
-            break;
-        case 7:
-            bookSeats();
-            break;
-        case 8:
-            return 0;
-        default:
-            cout << "Некорректный выбор." << endl;
-        }
-    }
+    std::cout << "Performing binary search for destination 'City A' and 10 required seats:" << std::endl;
+    binarySearch("City A", 10);
 
     return 0;
 }
